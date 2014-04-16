@@ -21,6 +21,21 @@
 #include <unistd.h>
 #include <vector>
 
+
+
+namespace ApiTest {
+
+   using Json::DESTRUCTIVE;
+
+   void foo()
+   {
+      char *c = 0;
+      Json::Tree(c,DESTRUCTIVE);
+   }
+
+}
+
+
 using Test::Source;
 using namespace Json;
 
