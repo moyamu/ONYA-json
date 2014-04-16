@@ -1,0 +1,7 @@
+.*.swp
+/*.o
+/tests.ok
+/libonyajson.a
+/tests
+/mktestdata
+/test_data*.json
