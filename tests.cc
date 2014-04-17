@@ -810,6 +810,7 @@ char *readFile(const char *fn)
    if (read(f,buf,sb.st_size) != sb.st_size) {
       fail(HERE,"Cannot read %s: %s", fn, strerror(errno));
    }
+   buf[sb.st_size] = 0;
    close(f);
    return buf;
 }

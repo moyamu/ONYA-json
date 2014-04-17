@@ -10,20 +10,20 @@
 ####################################################################################################
 # Configuration
 
-CXX := g++
+CXX = g++
 
 # release build:
-CXXFLAGS := -O3 -Wall -Werror
-LDFLAGS :=
+CXXFLAGS = -m64 -O3 -Wall -Werror
+LDFLAGS = -m64
 
 # maintainer:
-#CXXFLAGS := -g -Wall -Werror -DPMU_=1
-#LDFLAGS := -g 
-#CXXFLAGS := -g -ftest-coverage -fprofile-arcs -pg -O3 -Wall -Werror
-#LDFLAGS := -g -ftest-coverage -fprofile-arcs -pg
+#CXXFLAGS = -g -Wall -Werror -DPMU_=1
+#LDFLAGS = -g 
+#CXXFLAGS = -g -ftest-coverage -fprofile-arcs -pg -O3 -Wall -Werror
+#LDFLAGS = -g -ftest-coverage -fprofile-arcs -pg
 
 # additional Linker flags required for the tests (for Linux)
-LDLIBS_RT := -lrt
+LDLIBS_RT = -lrt
 
 ####################################################################################################
 # Main targets
@@ -52,7 +52,7 @@ clean:
 tests.ok: tests
 	./tests && touch $@
 
-tests_objs := tests.o json.o _pmu.o _test.o
+tests_objs = tests.o json.o _pmu.o _test.o
 tests: ${tests_objs}
 	$(CXX) ${LDFLAGS} -o $@ ${tests_objs} ${LDLIBS_RT}
 
