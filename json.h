@@ -19,7 +19,6 @@ namespace Json {
    /////////////////////////////////////////////////////////////////////////////////////////////////
 
    /// The type of a JSON value.
-   /// Corresponds to the ECMA-404 types except «JBOOL» used for «true» and «false».
    enum Type {
       JNULL,
       JBOOL,
@@ -155,4 +154,3 @@ namespace Json {
 }
 
 #endif
-

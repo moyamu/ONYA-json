@@ -9,11 +9,11 @@
 
 #include "json.h"
 
-//#if PMU_==1
+#if PMU_ == 1
 #include "_pmu.h"
-//#else
-//#define PMU(x)
-//#endif
+#else
+#define PMU(x)
+#endif
 
 #include <ctype.h>
 #include <stdexcept>
@@ -29,12 +29,11 @@ static const size_t BLOCK_SIZE = 1024;
 static const unsigned ALIGNMENT  = 8;
 #define ROUND_UP(n) (((n) + ALIGNMENT - 1) / ALIGNMENT * ALIGNMENT)
 
-
-#define IS_SPACE(c) (((unsigned char)(c) <= 0x20) && ((c) == '\x20' || (c) == '\x9' || (c) == '\xD' || (c) == '\xA'))
+#define IS_SPACE(c)\
+   (((unsigned char)(c) <= 0x20) && ((c) == '\x20' || (c) == '\x9' || (c) == '\xD' || (c) == '\xA'))
 #define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
 #define IS_LCHEX(c) ((c) >= 'a' && (c) <= 'f')
 #define IS_UCHEX(c) ((c) >= 'A' && (c) <= 'F')
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -60,7 +59,6 @@ typedef struct {
    Value** tail;
 } StackEntry;
 
-
 static inline void appendValue(StackEntry *tos, Value *child)
 {
    child->next_ = 0;
@@ -83,12 +81,10 @@ static char BOOL_FALSE[] = "false";
 static char NULL_VALUE[] = "null";
 static const Value CONST_NULL = {ANONYMOUS_NULL + 1,0,0};
 
-
 #define FAIL(pos, msg) \
    *errorPosition = pos; \
    *errorMessage = msg;\
    return 0
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -101,7 +97,6 @@ static const Value CONST_NULL = {ANONYMOUS_NULL + 1,0,0};
 #define T_SIMPLE 0x04
 #define T_OPEN 0x08             // '{' or '{'
 #define T_KEY  0x10
-
 
 #define EXPECT(x) if (!(allowed & (x))) { FAIL(s,"illegal token (" #x ")"); }
 #define IN_OBJECT() ((Type)stack[tos].obj->name_[-1] == JOBJECT)
@@ -249,20 +244,20 @@ Value *Tree::parseInternal(char *source, const char **errorPosition, const char 
       } else if (s[0] == 'n' && s[1] == 'u' && s[2] == 'l' && s[3] == 'l') {
          EXPECT(T_SIMPLE);
          object = (Value *)malloc(sizeof(Value));
-         SET_KEY_TYPE(NULL);
          object->value_ = NULL_VALUE;
+         SET_KEY_TYPE(NULL);
          s += 4;
       } else if (s[0] == 't' && s[1] == 'r' && s[2] == 'u' && s[3] == 'e') {
          EXPECT(T_SIMPLE);
          object = (Value *)malloc(sizeof(Value));
-         SET_KEY_TYPE(BOOL);
          object->value_ = BOOL_TRUE;
+         SET_KEY_TYPE(BOOL);
          s += 4;
       } else if (s[0] == 'f' && s[1] == 'a' && s[2] == 'l' && s[3] == 's' && s[4] == 'e') {
          EXPECT(T_SIMPLE);
          object = (Value *)malloc(sizeof(Value));
-         SET_KEY_TYPE(BOOL);
          object->value_ = BOOL_FALSE;
+         SET_KEY_TYPE(BOOL);
          s += 5;
       } else if (*s == '{' || *s == '[') {
          EXPECT(T_OPEN);
@@ -270,6 +265,7 @@ Value *Tree::parseInternal(char *source, const char **errorPosition, const char 
             FAIL(s, "JSON nesting too deep");
          }
          Value *object = (Value *)malloc(sizeof(Value));
+         object->value_ = 0;
          if (*s == '{') {
             allowed = T_CLOSE | T_KEY;
             SET_KEY_TYPE(OBJECT);
@@ -277,7 +273,6 @@ Value *Tree::parseInternal(char *source, const char **errorPosition, const char 
             allowed = T_CLOSE | T_OPEN | T_SIMPLE;
             SET_KEY_TYPE(ARRAY);
          }
-         object->value_ = 0;
          ++s;
          // push on stack and set root
          if (tos < 0) {
@@ -313,6 +308,16 @@ Value *Tree::parseInternal(char *source, const char **errorPosition, const char 
             }
          }
          key = 0;
+      } else if (*s == '/' && s[1] == '/') {
+         s += 2;
+         while (*s != 0 && *s != '\n') ++s;
+      } else if (*s == '/' && s[1] == '*') {
+         s += 2;
+         while (*s != 0 && (s[0] != '*' || s[1] != '/')) ++s;
+         if (*s == 0) {
+            FAIL(s, "unterminated comment");
+         }
+         s += 2;
       } else {
          FAIL(s, "syntax error");
       }
@@ -342,265 +347,260 @@ Value *Tree::parseInternal(char *source, const char **errorPosition, const char 
    return root;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-namespace Json {
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   int Value::asInt() const
-   {
-      switch (type()) {
+int Value::asInt() const
+{
+   switch (type()) {
       case JBOOL:
-            return value_ == BOOL_TRUE ? 1 : 0;
+         return value_ == BOOL_TRUE ? 1 : 0;
       case JNUMBER:
-            return atoi(value_);
+         return atoi(value_);
       case JOBJECT:
       case JARRAY:
       case JSTRING:
       case JNULL:
-            throw std::invalid_argument("illegal conversion to int");
-      }
+         throw std::invalid_argument("illegal conversion to int");
+   }
+   return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const char *Value::asString() const
+{
+   switch (type()) {
+      case JOBJECT:
+         throw std::invalid_argument("illegal conversion of object to string");
+      case JARRAY:
+         throw std::invalid_argument("illegal conversion of array to string");
+      default:
+         break;
+   }
+   return value_;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool Value::asBool() const
+{
+   switch (type()) {
+      case JBOOL:
+         return value_ == BOOL_TRUE;
+      case JNULL:
+         return false;
+      case JNUMBER:
+         for (const char *c = value_; *c && *c != 'e' && *c != 'E'; ++c) {
+            if (IS_DIGIT(*c) && (*c != '0')) {
+               return true;
+            }
+         }
+         return false;
+      case JOBJECT:
+      case JARRAY:
+      case JSTRING:
+         return true;
+   }
+   return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+size_t Value::length() const
+{
+   if (value_ == 0) {
       return 0;
    }
+   if (((Type)name_[-1] != JARRAY) && ((Type)name_[-1] != JOBJECT)) {
+      return 0;
+   }
+   size_t len = 0;
+   for (Value* x = (Value*) value_; x; x = x->next_) {
+      ++len;
+   }
+   return len;
+}
 
-   /////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   const char *Value::asString() const
-   {
-      switch (type()) {
-         case JOBJECT:
-            throw std::invalid_argument("illegal conversion of object to string");
-         case JARRAY:
-            throw std::invalid_argument("illegal conversion of array to string");
-         default:
-            break;
+const Value* Value::children() const
+{
+   if (((Type)name_[-1] != JARRAY) && ((Type)name_[-1] != JOBJECT)) {
+      throw std::invalid_argument("indexed access on simple type");
+   }
+   return (const Value*) value_;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const Value& Value::get(int i) const
+{
+   const Value*x = children();
+   while (i > 0 && x != 0) {
+      --i;
+      x = x->next_;
+   }
+   if ((x == 0) || (i != 0)) {
+      throw std::invalid_argument("array index out of bounds");
+   }
+   return *x;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const Value& Value::get(const char *s) const
+{
+   if ((Type)name_[-1] != JOBJECT) {
+      throw std::invalid_argument("member access on non-object");
+   }
+   const Value*x = (const Value*) value_;
+   while (x != 0) {
+      if (!strcmp(x->name_,s)) {
+         return *x;
       }
-      return value_;
+      x = x->next_;
    }
+   return CONST_NULL;
+}
 
-   /////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   bool Value::asBool() const
-   {
-      switch (type()) {
-      case JBOOL:
-            return value_ == BOOL_TRUE;
-      case JNULL:
-            return false;
-      case JNUMBER:
-            for (const char *c = value_; *c && *c != 'e' && *c != 'E'; ++c) {
-               if (IS_DIGIT(*c) && (*c != '0')) {
-                  return true;
-               }
-            }
-            return false;
-      case JOBJECT:
-      case JARRAY:
-      case JSTRING:
-            return true;
+void Tree::parseInternal(char *source)
+{
+   const char *errorPosition = 0;
+   const char *errorMessage = 0;
+
+   root_ = parseInternal(source, &errorPosition, &errorMessage);
+   if (root_ == 0) {
+      throw SyntaxError(errorPosition - source, errorMessage);
+   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+char *Tree::malloc(size_t size)
+{
+   size = ROUND_UP(size);
+
+   if (head_ == 0 || head_->eofs_ < (char*) head_ + sizeof(Chunk) + size) {
+      // Insufficient free space, allocate a new chunk.
+      const size_t chunkSize = ROUND_UP(std::max(sizeof(Chunk) + size, BLOCK_SIZE));
+      Chunk *chunk = (Chunk*) ::malloc(chunkSize);
+      if (chunk == 0) {
+         throw std::runtime_error("OOM");
       }
-      return false;
+      chunk->eofs_ = (char*) chunk + chunkSize;
+      chunk->next_ = head_;
+      head_ = chunk;
    }
 
-   /////////////////////////////////////////////////////////////////////////////////////////////////
+   // Allocate from current chunk.
+   return head_->eofs_ -= size;
+}
 
-   size_t Value::length() const
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Tree::~Tree()
+{
+   while (head_) {
+      Chunk *c = head_;
+      head_ = head_->next_;
+      ::free(c);
+   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Tree::Tree()
+   : head_(0), root_(0)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Tree::Tree(char *source, ParseMode mode)
+   : head_(0), root_(0)
+{
+   parse(source, mode);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Tree::Tree(const char *source )
+   : head_(0), root_(0)
+{
+   parse(source);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Tree::Tree(const std::string &source)
+   : head_(0), root_(0)
+{
+   parse(source);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Tree::parse(char *source, ParseMode mode)
+{
+   char *workingBuffer = source;
+   if (mode == NON_DESTRUCTIVE) {
+      const size_t sourceLength = strlen(source) + 1;
+      workingBuffer = malloc(sourceLength);
+      memcpy(workingBuffer, source, sourceLength);
+   }
+   parseInternal(workingBuffer);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Tree::parse(const char *source)
+{
+   parse((char *)source, NON_DESTRUCTIVE);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Tree::parse(const std::string& source)
+{
+   return parse((char*) source.c_str(), NON_DESTRUCTIVE);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const Value& Tree::root() const
+{
+   if (root_ == 0) {
+      throw std::runtime_error("empty JSON document");
+   }
+   return *root_;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+   std::string formatMessage(size_t offset, const char *message)
    {
-      if (value_ == 0) {
-         return 0;
-      }
-      if (((Type)name_[-1] != JARRAY) && ((Type)name_[-1] != JOBJECT)) {
-         return 0;
-      }
-      size_t len = 0;
-      for (Value* x = (Value*) value_; x; x = x->next_) {
-         ++len;
-      }
-      return len;
+      char tmp[200];
+      snprintf(tmp, sizeof(tmp), "JSON syntax error at position %lu: %s",
+            (unsigned long) offset, message);
+      return std::string(tmp);
    }
+}
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-   
-   const Value* Value::children() const
-   {
-      if (((Type)name_[-1] != JARRAY) && ((Type)name_[-1] != JOBJECT)) {
-         throw std::invalid_argument("indexed access on simple type");
-      }
-      return (const Value*) value_;
-   }
+SyntaxError::~SyntaxError() throw()
+{
+}
 
-   /////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   const Value& Value::get(int i) const
-   {
-      const Value*x = children();
-      while (i > 0 && x != 0) {
-         --i;
-         x = x->next_;
-      }
-      if ((x == 0) || (i != 0)) {
-         throw std::invalid_argument("array index out of bounds");
-      }
-      return *x;
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   const Value& Value::get(const char *s) const
-   {
-      if ((Type)name_[-1] != JOBJECT) {
-         throw std::invalid_argument("member access on non-object");
-      }
-      const Value*x = (const Value*) value_;
-      while (x != 0) {
-         if (!strcmp(x->name_,s)) {
-            return *x;
-         }
-         x = x->next_;
-      }
-      return CONST_NULL;
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   void Tree::parseInternal(char *source)
-   {
-      const char *errorPosition = 0;
-      const char *errorMessage = 0;
-
-      root_ = parseInternal(source, &errorPosition, &errorMessage);
-      if (root_ == 0) {
-         throw SyntaxError(errorPosition - source, errorMessage);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   char *Tree::malloc(size_t size)
-   {
-      size = ROUND_UP(size);
-
-      if (head_ == 0 || head_->eofs_ < (char*) head_ + sizeof(Chunk) + size) {
-         // Insufficient free space, allocate a new chunk.
-         const size_t chunkSize = ROUND_UP(std::max(sizeof(Chunk) + size, BLOCK_SIZE));
-         Chunk *chunk = (Chunk*) ::malloc(chunkSize);
-         if (chunk == 0) {
-            throw std::runtime_error("OOM");
-         }
-         chunk->eofs_ = (char*) chunk + chunkSize;
-         chunk->next_ = head_;
-         head_ = chunk;
-      }
-
-      // Allocate from current chunk.
-      return head_->eofs_ -= size;
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   Tree::~Tree()
-   {
-      while (head_) {
-         Chunk *c = head_;
-         head_ = head_->next_;
-         ::free(c);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   Tree::Tree()
-      : head_(0), root_(0)
-   {
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   Tree::Tree(char *source, ParseMode mode)
-      : head_(0), root_(0)
-   {
-      parse(source, mode);
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   Tree::Tree(const char *source )
-      : head_(0), root_(0)
-   {
-      parse(source);
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   Tree::Tree(const std::string &source)
-      : head_(0), root_(0)
-   {
-      parse(source);
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   void Tree::parse(char *source, ParseMode mode)
-   {
-      char *workingBuffer = source;
-      if (mode == NON_DESTRUCTIVE) {
-         const size_t sourceLength = strlen(source) + 1;
-         workingBuffer = malloc(sourceLength);
-         memcpy(workingBuffer, source, sourceLength);
-      }
-      parseInternal(workingBuffer);
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   void Tree::parse(const char *source)
-   {
-      parse((char *)source, NON_DESTRUCTIVE);
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   void Tree::parse(const std::string& source)
-   {
-      return parse((char*) source.c_str(), NON_DESTRUCTIVE);
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-   const Value& Tree::root() const
-   {
-      if (root_ == 0) {
-         throw std::runtime_error("empty JSON document");
-      }
-      return *root_;
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-   
-   namespace {
-      std::string formatMessage(size_t offset, const char *message)
-      {
-         char tmp[200];
-         snprintf(tmp, sizeof(tmp), "JSON syntax error at position %lu: %s",
-                  (unsigned long) offset, message);
-         return std::string(tmp);
-      }
-   }
-   
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-   
-   SyntaxError::~SyntaxError() throw()
-   {
-   }
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-   
-   SyntaxError::SyntaxError(size_t offset, const char *message)
-      : runtime_error(formatMessage(offset, message)), offset_(offset)
-   {
-   }
-
+SyntaxError::SyntaxError(size_t offset, const char *message)
+   : runtime_error(formatMessage(offset, message)),
+     offset_(offset)
+{
 }
 
 // vim:et:sw=3

@@ -6,15 +6,15 @@ A simple and fast JSON parser for C++
 What it does:
 
 * parse UTF-8 encoded JSON source
-* navigate JSON tree with get() and/or operator[] syntax
+* navigate JSON tree with get() and/or operator[]
 * convert JSON to C++ types, e.g. boolean → string
 * basic validation - detects most common syntax errors
+* allow C and C++ style comments at certain places
 * optional: destructive parsing for better performance
 
 What it doesn't:
 
 * support source encodings other than UTF-8
-* handle comments
 * manipulate or generate JSON
 * provide efficient random access − list and object access
   cost is O(length) 
@@ -64,7 +64,7 @@ Use
 
     // Iterating
     for (const Value *i = &parent.children(); i; i = i->next_) {
-	// ...
+       // ...
     }
 
     // operator syntax

@@ -13,8 +13,8 @@
 CXX = g++
 
 # release build:
-CXXFLAGS = -m64 -O3 -Wall -Werror
-LDFLAGS = -m64
+CXXFLAGS = -O3 -Wall -Werror
+LDFLAGS = 
 
 # maintainer:
 #CXXFLAGS = -g -Wall -Werror -DPMU_=1
