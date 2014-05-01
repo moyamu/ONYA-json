@@ -56,14 +56,14 @@ static unsigned int parseHex4(char *c)
 
 typedef struct {
    Value* obj;
-   Value** tail;
+   void *tail;  // where to append the next child
 } StackEntry;
 
 static inline void appendValue(StackEntry *tos, Value *child)
 {
    child->next_ = 0;
-   *tos->tail = child;
-   tos->tail = (Value**) &child->next_;
+   *((Value**)tos->tail) = child;
+   tos->tail = &child->next_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,7 +283,7 @@ Value *Tree::parseInternal(char *source, const char **errorPosition, const char 
          }
          ++tos;
          stack[tos].obj = object;
-         stack[tos].tail = (Value**)&object->value_;
+         stack[tos].tail = &object->value_;
          key = 0;
       } else if (*s == '}' || *s == ']') {
          EXPECT(T_CLOSE);

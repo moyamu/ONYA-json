@@ -43,6 +43,12 @@ clean:
 	rm -f *.a *.o
 	rm -f gmon.out *.gcno *.gcda *.gcov
 
+.PHONY: tar
+tar: ONYA-json.tar.gz
+tar_files := json.cc json.h tests.cc _test.cc _test.h _pmu.cc _pmu.h mktestdata.cc Makefile
+ONYA-json.tar.gz: ${tar_files}
+	tar cfz $@ ${tar_files}
+
 %.o: %.cc Makefile
 	${CXX} ${CXXFLAGS} -c -o $@ $<
 

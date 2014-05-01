@@ -21,8 +21,6 @@
 #include <unistd.h>
 #include <vector>
 
-
-
 namespace ApiTest {
 
    using Json::DESTRUCTIVE;
@@ -35,15 +33,13 @@ namespace ApiTest {
 
 }
 
-
 using Test::Source;
 using namespace Json;
-
 
 static bool isNear(double a, double b, double epsilon)
 {
    if (b == 0) {
-      return a == 0;
+      return a < epsilon && a > -epsilon;
    }
 
    // Reduce to the case where a>=0 and b>=0
@@ -63,7 +59,6 @@ static bool isNear(double a, double b, double epsilon)
    return (1 - epsilon) < (double)(a / b) && (double)(a / b) < (1 + epsilon);
 }
 
-
 static void assertInt(const Source& where, const Value& e, int value, const char *expr)
 {
    if (e.type() != JNUMBER) {fail(where, "%s: type is not NUMBER but %d", expr, e.type()); }
@@ -71,7 +66,6 @@ static void assertInt(const Source& where, const Value& e, int value, const char
       fail(where, "%s: value is %d, expected %d", expr, e.asInt(), value);
    }
 }
-
 
 static void assertFloat(const Source& where, const Value& e, double value, const char *expr)
 {
@@ -82,7 +76,6 @@ static void assertFloat(const Source& where, const Value& e, double value, const
    }
 }
 
-
 static void assertBool(const Source& where, const Value& e, bool value, const char *expr)
 {
    if (e.type() != JBOOL) {fail(where, "%s: type is not BOOL but %d", expr, e.type()); }
@@ -90,7 +83,6 @@ static void assertBool(const Source& where, const Value& e, bool value, const ch
       fail(where, "%s: value=%d expected=%d", expr, e.asInt(), value);
    }
 }
-
 
 static void assertString(const Source& where, const Value& e, const char *value, const char *expr)
 {
@@ -100,12 +92,10 @@ static void assertString(const Source& where, const Value& e, const char *value,
    }
 }
 
-
 static void assertNull(const Source& where, const Value& e, const char *expr)
 {
    if (e.type() != JNULL) {fail(where, "%s: type is not NULL but %d", expr, e.type()); }
 }
-
 
 static void assertArray(const Source& where, const Value& e, size_t len, const char *expr)
 {
@@ -118,7 +108,6 @@ static void assertArray(const Source& where, const Value& e, size_t len, const c
                        (unsigned)len); }
 }
 
-
 static void assertObject(const Source& where, const Value& e, size_t len, const char *expr)
 {
    if (e.type() != JOBJECT) {fail(where, "%s: type is not ARRAY but %d", expr, e.type()); }
@@ -129,7 +118,6 @@ static void assertObject(const Source& where, const Value& e, size_t len, const 
                        (unsigned) l,
                        (unsigned)len); }
 }
-
 
 static void assertEq(const Source& where, const char *val, const char *exp, const char *expr)
 {
@@ -179,7 +167,6 @@ void print(Value *v, int indent = 0)
    fflush(stdout);
 }
 
-
 static void assertParserError(const Test::Source &where, const char *source, size_t errorOffset)
 {
    try {
@@ -196,7 +183,6 @@ static void assertParserError(const Test::Source &where, const char *source, siz
       }
    }
 }
-
 
 TEST(Api)
 {
@@ -219,7 +205,6 @@ TEST(Api)
    ASSERT(b3[2].asInt() == 3);
    ASSERT_BOOL(b3[1]["a"],true);
    ASSERT(b3.root()[2].asInt() == 3);
-
 
    for (const Value *i = b3.root().children(); i; i = i->next_) {
    }
@@ -469,7 +454,6 @@ TEST(BadString_LineBreak2)
 
 //TEST(DuplicateAttribute)    { ASSERT_PARSER_ERROR("{\"A\":0,\"A\":0}",7); }
 
-
 TEST(EmptyObject)
 {
    Tree doc("{}");
@@ -615,7 +599,6 @@ TEST(BadUnicode)
 {
    ASSERT_PARSER_ERROR("[\"\\u 123\"]",2);
 }
-
 
 TEST(Unicode)
 {
@@ -866,6 +849,5 @@ int main(int argc, char **argv)
    Test::Test::runAll();
    return Test::nErrors == 0 ? 0 : 1;
 }
-
 
 // vim:et:sw=3
