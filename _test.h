@@ -14,9 +14,9 @@
 #include <stdexcept>
 
 #if (__GNUC__ >= 3)
-   #define PRINTF_CHECK(i,k) __attribute__((format(printf,2,3)))
+   #define PRINTF_CHECK(i,k) __attribute__((format(printf,i,k)))
 #else
-   #define PRINTF_CHECK(i,k) __attribute__((format(printf,2,3)))
+   #define PRINTF_CHECK(i,k) 
 #endif
 
 namespace Test
@@ -76,6 +76,8 @@ namespace Test
 #define HERE ::Test::Source(__FILE__,__LINE__)
 #define ASSERT_THROWS(expr,et) \
    try { (expr); fail(HERE,"did not throw:%s",# expr); } catch (const et&) {}
+
+#undef PRINTF_CHECK
 
 #endif
 
