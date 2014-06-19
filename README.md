@@ -11,6 +11,7 @@ What it does:
 * basic validation - detects most common syntax errors
 * allow C and C++ style comments at certain places
 * optional: destructive parsing for better performance
+* JSON prettyprinting, see [Examples](EXAMPLES.md)
 
 What it doesn't:
 

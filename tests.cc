@@ -799,6 +799,85 @@ TEST(MultiLineComments)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+TEST(FormatterEmptyObj)
+{
+   char json[] =
+      "{"
+         "\"empty\":{\n}"
+      "}";
+   std::string EXPECTED = "{\n  \"empty\": {}\n}\n";
+   std::string formatted;
+   prettyPrint(json, formatted);
+   ASSERT(formatted == EXPECTED);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+TEST(FormatterObj)
+{
+   char json[] =
+      "{"
+         "\"one\":1,"
+         "\"null\":null"
+      "}";
+   std::string EXPECTED = "{\n  \"one\": 1,\n  \"null\": null\n}\n";
+   std::string formatted;
+   prettyPrint(json, formatted);
+   ASSERT(formatted == EXPECTED);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+TEST(FormatterEmptyArray)
+{
+   char json[] = "[[],[]]";
+   std::string EXPECTED = "[\n  [],\n  []\n]\n";
+   std::string formatted;
+   prettyPrint(json, formatted);
+   ASSERT(formatted == EXPECTED);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+TEST(FormatterArray)
+{
+   char json[] = "[1,2]";
+   std::string EXPECTED = "[\n  1,\n  2\n]\n";
+   std::string formatted;
+   prettyPrint(json, formatted);
+   ASSERT(formatted == EXPECTED);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+TEST(FormatterNested)
+{
+   char json[] =
+      "{"
+         "\"array\":[1,{\"one\":1}],"
+         "\"obj\":{\"obj\":{}}"
+      "}";
+   std::string EXPECTED = 
+      "{\n"
+      "  \"array\": [\n"
+      "    1,\n"
+      "    {\n"
+      "      \"one\": 1\n"
+      "    }\n"
+      "  ],\n"
+      "  \"obj\": {\n"
+      "    \"obj\": {}\n"
+      "  }\n"
+      "}\n";
+
+   std::string formatted;
+   prettyPrint(json, formatted);
+   ASSERT(formatted == EXPECTED);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 char *readFile(const char *fn)
 {
    int f = open(fn,O_RDONLY);

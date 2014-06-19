@@ -151,6 +151,19 @@ namespace Json {
       SyntaxError(size_t offset, const char *message);
    };
 
+   /////////////////////////////////////////////////////////////////////////////////////////////////
+
+   /// Simple, non-validating JSON formatter.
+   /// Formats the JSON document in «source» and outputs formatted document via «emit()». «usr» is
+   /// passed in the first argument to «emit()». Formatting is done with an indentation of 2 spaces.
+   /// The output is terminated by a newline.
+   void prettyPrint(char const *source, void (*emit)(void *usr, char const *, size_t), void *usr);
+
+   /// Formats and writes to the given file.
+   void prettyPrint(char const *source, FILE *f);
+   
+   /// Formats and appends to the given string.
+   void prettyPrint(char const *source, std::string &buffer);
 }
 
 #endif

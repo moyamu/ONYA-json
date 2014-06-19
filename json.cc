@@ -603,4 +603,92 @@ SyntaxError::SyntaxError(size_t offset, const char *message)
 {
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void newLine(int level, void (*emit)(void *, char const *, size_t), void *usr)
+{
+   static const char nl[] = "\n                                                            ";
+   static const int MAX_LEVEL = (sizeof(nl) - 2) / 2;
+   emit(usr, nl, 1 + 2 * (level <= MAX_LEVEL ? level : MAX_LEVEL));
+}
+
+namespace Json {
+
+   /////////////////////////////////////////////////////////////////////////////////////////////////
+
+   // Note: this is actually a pure C function. 
+   void prettyPrint(char const *source, void (*emit)(void *, char const *, size_t), void *usr)
+   {
+      char const *s = source;
+      int level = 0;
+
+      while (1) {
+         SKIP_WS();
+         if (*s == 0) break;
+         if (*s == '"') {
+            const char * const bos = s;
+            ++s;
+            while (*s != 0 && *s != '"') {
+               if (*s == '\\' && s[1] != 0) {
+                  s += 2;
+               } else {
+                  ++s;
+               }
+            }
+            if (*s == '"') ++s;
+            emit(usr, bos, s - bos);
+         } else if (*s == '{' || *s == '[') {
+            emit(usr, s++, 1);
+            SKIP_WS();
+            if (*s == '}' || *s == ']') { 
+               emit(usr, s++, 1);
+            } else {
+               ++level;
+               newLine(level, emit, usr);
+            }
+         } else if (*s == '}' || *s == ']') {
+            --level;
+            newLine(level, emit, usr);
+            emit(usr, s++, 1);
+         } else if (*s == ',') {
+            emit(usr, s++, 1);
+            newLine(level, emit, usr);
+         } else if (*s == ':') {
+            emit(usr, ": ", 2);
+            ++s;
+         } else {
+            const char * const bos = s;
+            while (*s != 0 && !IS_SPACE(*s) && *s != ',' && *s != '}' && *s != ']') ++s;
+            emit(usr, bos, s - bos);
+         }
+      }
+      emit(usr, "\n", 1);
+   }
+
+   /////////////////////////////////////////////////////////////////////////////////////////////////
+
+   static void emitStdio(void *file, char const *s, size_t len)
+   {
+      fwrite(s, 1, len, (FILE*)file);
+   }
+
+   void prettyPrint(char const *source, FILE *f)
+   {
+      prettyPrint(source, emitStdio, f);
+   }
+
+   /////////////////////////////////////////////////////////////////////////////////////////////////
+
+   static void emitString(void *buffer, char const *s, size_t len)
+   {
+      ((std::string*)buffer)->append(s, len);
+   }
+
+   void prettyPrint(char const *source, std::string &buffer)
+   {
+      prettyPrint(source, emitString, &buffer);
+   }
+
+}
+
 // vim:et:sw=3

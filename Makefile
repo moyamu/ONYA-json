@@ -11,15 +11,20 @@
 # Configuration
 
 CXX = g++
+CC = gcc
 
 # release build:
-CXXFLAGS = -O3 -Wall -Werror
+CFLAGS = -O3 -Wall -Werror
+CXXFLAGS = ${CFLAGS}
 LDFLAGS = 
 
 # maintainer:
-#CXXFLAGS = -g -Wall -Werror -DPMU_=1
+#CFLAGS = -g -Wall -Werror -DPMU_=1
+#CXXFLAGS = ${CFLAGS}
 #LDFLAGS = -g 
-#CXXFLAGS = -g -ftest-coverage -fprofile-arcs -pg -O3 -Wall -Werror
+#
+#CFLAGS = -g -ftest-coverage -fprofile-arcs -pg -O3 -Wall -Werror
+#CXXFLAGS = ${CFLAGS}
 #LDFLAGS = -g -ftest-coverage -fprofile-arcs -pg
 
 # additional Linker flags required for the tests (for Linux)
@@ -29,7 +34,7 @@ LDLIBS_RT = -lrt
 # Main targets
 
 .PHONY: all
-all: tests.ok mktestdata
+all: tests.ok mktestdata jsonpp
 
 .PHONY: help
 help:
@@ -51,6 +56,13 @@ ONYA-json.tar.gz: ${tar_files}
 
 %.o: %.cc Makefile
 	${CXX} ${CXXFLAGS} -c -o $@ $<
+
+####################################################################################################
+# Example programs
+
+jsonpp: jsonpp.c
+	$(CC) ${LDFLAGS} ${CFLAGS} -o $@ $<
+
 
 ####################################################################################################
 # Tests
